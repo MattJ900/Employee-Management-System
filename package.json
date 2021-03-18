@@ -1,0 +1,30 @@
+{
+  "name": "employee-management-system",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MattJ900/Employee-Management-System.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MattJ900/Employee-Management-System/issues"
+  },
+  "homepage": "https://github.com/MattJ900/Employee-Management-System#readme",
+  "dependencies": {
+    "chalk": "^4.1.0",
+    "console-table": "^0.1.2",
+    "express": "^4.17.1",
+    "figlet": "^1.5.0",
+    "inquirer": "^8.0.0",
+    "mysql": "^2.18.1",
+    "mysql2": "^2.2.5",
+    "nodemon": "^2.0.7",
+    "validator": "^13.5.2"
+  }
+}
