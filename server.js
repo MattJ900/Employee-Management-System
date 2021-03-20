@@ -1,5 +1,6 @@
 const mysql = require('mysql');
 const inquirer = require('inquirer');
+require("dotenv").config()
 
 // create the connection information for the sql database
 const connection = mysql.createConnection({
@@ -12,8 +13,8 @@ const connection = mysql.createConnection({
   user: 'root',
 
   // Your password
-  password: '',
-  database: 'greatBay_DB',
+  password: process.env.DB_PASSWORD,
+  database: 'employee_DB',
 });
 
 // function which prompts the user for what action they should take
@@ -153,3 +154,6 @@ connection.connect((err) => {
   // run the start function after the connection is made to prompt the user
   start();
 });
+
+
+
