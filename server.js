@@ -1,5 +1,9 @@
 const mysql = require('mysql');
 const inquirer = require('inquirer');
+const connection = require("./config/connection");
+const inquirer = require("inquirer");
+const cTable = require("console.table");
+const mysql = require("mysql");
 require("dotenv").config()
 
 // create the connection information for the sql database
@@ -17,136 +21,237 @@ const connection = mysql.createConnection({
   database: 'employee_DB',
 });
 
-// function which prompts the user for what action they should take
-const start = () => {
+// Inquirer prompt and promise
+const askQ = function() {
   inquirer
     .prompt({
-      name: 'postOrBid',
-      type: 'list',
-      message: 'Would you like to [POST] an auction or [BID] on an auction?',
-      choices: ['POST', 'BID', 'EXIT'],
+      type: "list",
+      name: "startQ",
+      message: "What would you like to do?",
+      choices: [
+        "view all employees",
+        "view all roles",
+        "view all departments",
+        "add employee",
+        "add department",
+        "add role",
+        "update employee role",
+        "remove employee"
+      ]
     })
-    .then((answer) => {
-      // based on their answer, either call the bid or the post functions
-      if (answer.postOrBid === 'POST') {
-        postAuction();
-      } else if (answer.postOrBid === 'BID') {
-        bidAuction();
-      } else {
-        connection.end();
+    .then(function(answer) {
+      console.log(answer);
+      // start of switch statment for user choice
+      switch (answer.startQ) {
+        case "view all employees":
+          viewallemployees();
+          break;
+
+        case "view all roles":
+          viewallroles();
+          break;
+
+        case "view all departments":
+          viewalldepartments();
+          break;
+
+        case "add employee":
+          addEmployee();
+          break;
+
+        case "update employee role":
+          updateEmpRole();
+          break;
+
+        case "add department":
+          addDepartment();
+          break;
+
+        case "add role":
+          addRole();
+          break;
       }
     });
 };
+askQ();
 
-// function to handle posting new items up for auction
-const postAuction = () => {
-  // prompt for info about the item being put up for auction
+// allows user to view all departments currently in the database
+function viewalldepartments() {
+  connection.query("SELECT * FROM department", function(err, answer) {
+    console.log("\n Departments Retrieved from Database \n");
+    console.table(answer);
+  });
+  askQ();
+}
+
+// allows user to view all employee roles currently in the database
+function viewallroles() {
+  connection.query("SELECT * FROM role", function(err, answer) {
+    console.log("\n Roles Retrieved from Database \n");
+    console.table(answer);
+  });
+  askQ();
+}
+
+// allows user to view all employees currently in the database
+function viewallemployees() {
+  console.log("retrieving employess from database");
+  var fancyQuery =
+    "SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department on role.department_id = department.id;";
+  connection.query(fancyQuery, function(err, answer) {
+    console.log("\n Employees retrieved from Database \n");
+    console.table(answer);
+  });
+  askQ();
+}
+
+// allows user to add a new employee to database
+function addEmployee() {
   inquirer
     .prompt([
       {
-        name: 'item',
-        type: 'input',
-        message: 'What is the item you would like to submit?',
+        type: "input",
+        message: "Enter employee first name",
+        name: "firstname"
       },
       {
-        name: 'category',
-        type: 'input',
-        message: 'What category would you like to place your auction in?',
-      },
-      {
-        name: 'startingBid',
-        type: 'input',
-        message: 'What would you like your starting bid to be?',
-        validate(value) {
-          if (isNaN(value) === false) {
-            return true;
-          }
-          return false;
-        },
-      },
+        type: "input",
+        message: "Enter employee last name",
+        name: "lastname"
+      }
     ])
-    .then((answer) => {
-      // when finished prompting, insert a new item into the db with that info
+    .then(function(answer) {
       connection.query(
-        'INSERT INTO auctions SET ?',
-        // QUESTION: What does the || 0 do?
+        "INSERT INTO employee SET ?",
         {
-          item_name: answer.item,
-          category: answer.category,
-          starting_bid: answer.startingBid || 0,
-          highest_bid: answer.startingBid || 0,
+          first_name: answer.firstname,
+          last_name: answer.lastname,
+          role_id: null,
+          manager_id: null
         },
-        (err) => {
-          if (err) throw err;
-          console.log('Your auction was created successfully!');
-          // re-prompt the user for if they want to bid or post
-          start();
+        function(err, answer) {
+          if (err) {
+            throw err;
+          }
+          console.table(answer);
         }
       );
+      askQ();
     });
-};
+}
 
-const bidAuction = () => {
-  // query the database for all items being auctioned
-  connection.query('SELECT * FROM auctions', (err, results) => {
-    if (err) throw err;
-    // once you have the items, prompt the user for which they'd like to bid on
+// grabs all employees (id, first name, last name) and then allows user to select employee to update role
+// https://www.guru99.com/delete-and-update.html
+function updateEmpRole() {
+  let allemp = [];
+  connection.query("SELECT * FROM employee", function(err, answer) {
+    // console.log(answer);
+    for (let i = 0; i < answer.length; i++) {
+      let employeeString =
+        answer[i].id + " " + answer[i].first_name + " " + answer[i].last_name;
+      allemp.push(employeeString);
+    }
+    // console.log(allemp)
+
     inquirer
       .prompt([
         {
-          name: 'choice',
-          type: 'rawlist',
-          choices() {
-            const choiceArray = [];
-            results.forEach(({ item_name }) => {
-              choiceArray.push(item_name);
-            });
-            return choiceArray;
-          },
-          message: 'What auction would you like to place a bid in?',
+          type: "list",
+          name: "updateEmpRole",
+          message: "select employee to update role",
+          choices: allemp
         },
         {
-          name: 'bid',
-          type: 'input',
-          message: 'How much would you like to bid?',
-        },
-      ])
-      .then((answer) => {
-        // get the information of the chosen item
-        let chosenItem;
-        results.forEach((item) => {
-          if (item.item_name === answer.choice) {
-            chosenItem = item;
-          }
-        });
-
-        // determine if bid was high enough
-        if (chosenItem.highest_bid < parseInt(answer.bid)) {
-          // bid was high enough, so update db, let the user know, and start over
-          connection.query(
-            'UPDATE auctions SET ? WHERE ?',
-            [
-              {
-                highest_bid: answer.bid,
-              },
-              {
-                id: chosenItem.id,
-              },
-            ],
-            (error) => {
-              if (error) throw err;
-              console.log('Bid placed successfully!');
-              start();
-            }
-          );
-        } else {
-          // bid wasn't high enough, so apologize and start over
-          console.log('Your bid was too low. Try again...');
-          start();
+          type: "list",
+          message: "select new role",
+          choices: ["manager", "employee"],
+          name: "newrole"
         }
+      ])
+      .then(function(answer) {
+        console.log("about to update", answer);
+        const idToUpdate = {};
+        idToUpdate.employeeId = parseInt(answer.updateEmpRole.split(" ")[0]);
+        if (answer.newrole === "manager") {
+          idToUpdate.role_id = 1;
+        } else if (answer.newrole === "employee") {
+          idToUpdate.role_id = 2;
+        }
+        connection.query(
+          "UPDATE employee SET role_id = ? WHERE id = ?",
+          [idToUpdate.role_id, idToUpdate.employeeId],
+          function(err, data) {
+            askQ();
+          }
+        );
       });
   });
-};
+}
+
+// allows user to add a new department into the database
+function addDepartment() {
+  inquirer
+    .prompt({
+      type: "input",
+      message: "enter department name",
+      name: "dept"
+    })
+    .then(function(answer) {
+      connection.query(
+        "INSERT INTO department SET ?",
+        {
+          name: answer.dept
+        },
+        function(err, answer) {
+          if (err) {
+            throw err;
+          }
+        }
+      ),
+        console.table(answer);
+      askQ();
+    });
+}
+
+// allows user to add a new role/title
+function addRole() {
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        message: "enter employee title",
+        name: "addtitle"
+      },
+      {
+        type: "input",
+        message: "enter employee salary",
+        name: "addsalary"
+      },
+      {
+        type: "input",
+        message: "enter employee department id",
+        name: "addDepId"
+      }
+    ])
+    .then(function(answer) {
+      connection.query(
+        "INSERT INTO role SET ?",
+        {
+          title: answer.addtitle,
+          salary: answer.addsalary,
+          department_id: answer.addDepId
+        },
+        function(err, answer) {
+          if (err) {
+            throw err;
+          }
+          console.table(answer);
+        }
+      );
+      askQ();
+    });
+}
+
 
 // connect to the mysql server and sql database
 connection.connect((err) => {
@@ -154,6 +259,3 @@ connection.connect((err) => {
   // run the start function after the connection is made to prompt the user
   start();
 });
-
-
-
