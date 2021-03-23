@@ -125,8 +125,7 @@ function addEmployee() {
     });
 }
 
-// grabs all employees (id, first name, last name) and then allows user to select employee to update role
-// https://www.guru99.com/delete-and-update.html
+
 function updateEmpRole() {
   let allemp = [];
   connection.query("SELECT * FROM employee", function(err, answer) {
