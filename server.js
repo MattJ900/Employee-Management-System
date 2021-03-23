@@ -1,24 +1,11 @@
-const mysql = require('mysql');
-const inquirer = require('inquirer');
-// const connection = require("./config/connection");
+// Dependencies
+const connection = require("./db/db.js");
+const inquirer = require("inquirer");
 const cTable = require("console.table");
-require("dotenv").config()
+const mysql = require("mysql");
+const sequelize = require('./config/connection');
 
-// create the connection information for the sql database
-const connection = mysql.createConnection({
-  host: 'localhost',
-
-  // Your port; if not 3306
-  port: 3306,
-
-  // Your username
-  user: 'root',
-
-  // Your password
-  password: process.env.DB_PASSWORD,
-  database: 'employee_DB',
-});
-
+// ====================================================================================================================
 // Inquirer prompt and promise
 const askQ = function() {
   inquirer
@@ -139,6 +126,7 @@ function addEmployee() {
 }
 
 // grabs all employees (id, first name, last name) and then allows user to select employee to update role
+// https://www.guru99.com/delete-and-update.html
 function updateEmpRole() {
   let allemp = [];
   connection.query("SELECT * FROM employee", function(err, answer) {
@@ -248,11 +236,3 @@ function addRole() {
       askQ();
     });
 }
-
-
-// connect to the mysql server and sql database
-connection.connect((err) => {
-  if (err) throw err;
-  // run the start function after the connection is made to prompt the user
-  start();
-});
